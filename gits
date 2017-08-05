@@ -1,0 +1,84 @@
+#!/usr/bin/env bash 
+# Usage: gits
+# Summary: Executes a git command on all repos           
+# Help: Executes a git command on all repos 
+
+PREPEND=true
+DEPTH=2
+
+while getopts :d:p: opt "$@"; do
+  case $opt in
+    d) DEPTH="$OPTARG" ;;
+    p) PREPEND="$OPTARG" ;;
+  esac
+done
+shift $(expr $OPTIND - 1 )
+
+args=("$@")
+cmd=""
+
+for ((i=1; i < $#; i++)) {
+  arg="${args[$i]}"
+  # If there is an '=', quote everything after it
+  if [[ $arg =~ "=" ]]; then
+    arg=`echo $arg | awk -F= '{print $1 "=\"" $2 "\""}'`
+  else
+    # If its a single dash option, quote everything after the second character 
+    if [[ $arg =~ ^-[a-zA-Z].+ ]]; then
+      arg=`echo $arg | sed -e 's/../&"/' -e 's/$/"/'`
+    else
+      # If it's an argument with a space it was quoted when entered so re-quote
+      if [[  $arg =~ " " ]]; then
+        arg="\"${arg}\""
+      fi
+    fi
+  fi
+  cmd="$cmd $arg"
+}
+
+cmd="${args[0]} $cmd"
+
+currDir=`pwd`
+gitDirs=`find $currDir -name .git -maxdepth ${DEPTH} | xargs -n1 dirname`
+
+dirsFound=`echo $gitDirs | tr " " "\n" | wc -l`
+
+currDir=`pwd`
+for dir in $gitDirs
+do 
+  if [ $currDir != $dir ]; then
+    relDir=`echo $dir | sed "s#$currDir/##g"`
+    pushd $dir >/dev/null 2>&1
+    if [ "X$git_auth" == "X" ]; then
+      export git_auth=`git get-auth 2>/dev/null`
+    fi
+    gits="git -c color.status=always $cmd"
+    output=`eval $gits 2>&1`
+    count=`echo "$output" | wc -l`
+    if [ $count -gt 0 -a "X$output" != "X" ]; then
+      if [ "X$PREPEND" != "Xtrue" ]; then
+        echo "$output"
+        echo
+      else
+        echo "$output" | awk -v linecount="$count" 'BEGIN{if (linecount > 1) print ""}{print "'$relDir': " $0}END{if (NR > 1) print ""}'
+      fi
+    fi
+    popd > /dev/null 2>&1
+  else
+    if [ $dirsFound -gt 1 ]; then
+      gits="git -c color.status=always $cmd"
+      output=`eval $gits 2>&1`
+      count=`echo "$output" | wc -l`
+      if [ $count -gt 0 -a "X$output" != "X" ]; then
+        if [ "X$PREPEND" != "Xtrue" ]; then
+          echo "$output"
+        else
+          echo "$output" | awk -v linecount="$count" 'BEGIN{if (linecount > 1) print ""}{print ".: " $0}END{if (NR > 1) print ""}'
+        fi
+      fi
+    else
+      gits="git $cmd"
+      eval $gits
+    fi
+  fi
+done
