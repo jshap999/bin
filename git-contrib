@@ -1,0 +1,7 @@
+users=`git --no-pager log --use-mailmap --all --format='%cE' | awk '{arr[$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn`
+
+for user in `echo "$users" | awk '{print $2}'`
+do
+  withDate=`git --no-pager log --all --use-mailmap -1 --author="$user" --pretty='format:%cN <%cE> - %cr%n'`
+  echo "$users" | sed -n -e "s/$user/$withDate/g" -e "/$user/p"
+done
