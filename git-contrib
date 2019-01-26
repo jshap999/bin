@@ -3,5 +3,5 @@ users=`git --no-pager log --use-mailmap --all --format='%cE' | awk '{arr[$0]++} 
 for user in `echo "$users" | awk '{print $2}'`
 do
   withDate=`git --no-pager log --all --use-mailmap -1 --author="$user" --pretty='format:%cN <%cE> - %cr%n'`
-  echo "$users" | sed -n -e "s/$user/$withDate/g" -e "/$user/p"
+  echo "$users" | grep $user | awk '{print $1}' | xargs -I{} echo {} $withDate
 done

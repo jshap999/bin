@@ -1,1 +1,8 @@
-git rev-parse --abbrev-ref HEAD
+wai=`git rev-parse --abbrev-ref HEAD`
+
+if [ "X$wai" == "XHEAD" ]; then
+  wai=`git describe --exact-match --tags $(git log -n1 --pretty='%h') 2>/dev/null || git log -n1 --pretty='%h'`
+fi
+
+echo $wai
+
