@@ -1,0 +1,17 @@
+if [ $(git wai) != "HEAD" ]; then
+  # The remote with which to reconcile origin
+  # assumes my std origin/parent setup
+  upstream=${1:-parent}
+
+  currentBranch=`git rev-parse --abbrev-ref HEAD` && \
+  git stash save "pre sync master" && \
+  git checkout master && \
+  git fetch $upstream && \
+  git rebase ${upstream}/master && \
+  git push && \
+  git checkout $currentBranch && \
+  git rebase master && \
+  git stash pop
+else
+  echo "Not on a branch"
+fi
