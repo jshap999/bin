@@ -1,1 +1,12 @@
-git remote get-url ${1:-origin}  | xargs open
+#!/usr/bin/env bash
+
+url=`git remote get-url ${1:-origin} | sed 's/.git$//'`
+urlNoGit=`echo $url | sed 's/^git\@//'`
+
+
+if [ "$url" != "$urlNoGit" ]; then
+  url=`echo $urlNoGit | sed -e 's#:#/#g' -e 's#^#https://#'`
+fi
+
+echo $url/tree/`git wai`  | xargs open
+

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 wai=`git rev-parse --abbrev-ref HEAD`
 
 if [ "X$wai" == "XHEAD" ]; then
